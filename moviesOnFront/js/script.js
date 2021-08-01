@@ -5,7 +5,8 @@ const PROMO_GENRE_CLASS = '.promo__genre';
 const PROMO_BG_CLASS = '.promo__bg';
 const FILMS_SELECTOR = '.promo__interactive-list .promo__interactive-item';
 const FILM_LIST_SELECTOR = '.promo__interactive-list';
-
+const ADD_FORM_CLASS = '.add';
+const NEW_FILM_INPUT_CLASS = '.adding__input';
 
 const movieDB = {
     movies: [
@@ -13,15 +14,63 @@ const movieDB = {
         "Лига справедливости",
         "Ла-ла лэнд",
         "Одержимость",
-        "Cкотт Пилигрим против..."
+        "скотт пилигрим против..."
     ]
 };
 
-removeAdvertisingElements();
-changePromoGenre('Drama');
-changePromoBackgroundImage('url(img/bg.jpg)');
-eraseFilmList();
-addFilmsToList(movieDB.movies);
+document.addEventListener('DOMContentLoaded', excecuteCode());
+
+function excecuteCode() {
+    removeAdvertisingElements();
+    changePromoGenre('Drama');
+    changePromoBackgroundImage('url(img/bg.jpg)');
+    updateFilmList(movieDB.movies);
+    addEventListenersForAddingFilm();
+}
+
+function addEventListenersForAddingFilm() {
+    let addFormElement = document.querySelector(ADD_FORM_CLASS);
+    addFormElement.addEventListener('submit', addNewFilmCallback);
+    addFormElement.addEventListener('submit', favoriteCallback);
+    addFormElement.addEventListener('submit', restoreFormCallback);
+}
+
+function restoreFormCallback(event) {
+    event.target.reset();
+}
+
+function favoriteCallback(event) {
+    let formCheckbox = event.target.querySelector('[type="checkbox"]');
+    if (formCheckbox.checked) {
+        console.log("Added favorite film!");
+    }
+}
+
+function addNewFilmCallback(event) {
+    event.preventDefault();
+    let newFilm = getNewFilmFromInput(event.target);
+    if (isValidFilm(newFilm)) {
+        movieDB.movies.push(newFilm);
+        updateFilmList(movieDB.movies);
+    }
+}
+
+function getNewFilmFromInput(form) {
+    let newFilmInputElem = form.querySelector(NEW_FILM_INPUT_CLASS);
+    return processNewFilmName(newFilmInputElem.value);
+}
+
+function processNewFilmName(newFilmName) {
+    if (newFilmName.length > 21) {
+        newFilmName = `${newFilmName.substring(0,22)}...`;
+    }
+    return newFilmName;
+}
+
+function updateFilmList(moviesArray) {
+    eraseFilmList();
+    addFilmsToList(moviesArray);
+}
 
 function addFilmsToList(filmsArray) {
     filmsArray = [...filmsArray];
@@ -55,7 +104,17 @@ function createFilmDiv(filmName) {
 function createDeleteMovieDiv() {
     let deleteDiv = document.createElement('div');
     deleteDiv.classList.add('delete');
+    deleteDiv.addEventListener('click', deleteMovieCallback, 'once');
     return deleteDiv;
+}
+
+function deleteMovieCallback(event) {
+    let filmNode = event.target.parentElement;
+    let filmName = filmNode.textContent;
+    filmNode.remove();
+    movieDB.movies = movieDB.movies
+        .filter((value) => value != filmName.substring(3));
+    updateFilmList(movieDB.movies);
 }
 
 function eraseFilmList() {
@@ -76,4 +135,9 @@ function changePromoGenre(newGenre) {
 function changePromoBackgroundImage(newImageUrl) {
     let promoBgDiv = document.querySelector(PROMO_BG_CLASS);
     promoBgDiv.style.backgroundImage = newImageUrl;
+}
+
+function isValidFilm(film) {
+    return typeof(film) === "string" &&
+        film.length > 0;
 }
